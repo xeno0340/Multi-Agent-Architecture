@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import LearnerForm from "../components/LearnerForm";
 import ResultsDisplay from "../components/ResultsDisplay";
 import HistoryPanel from "../components/HistoryPanel";
+import GeneratingStatus from "../components/GeneratingStatus.js";
 
 const HISTORY_KEY_PREFIX = "learner-history:";
 
@@ -90,6 +91,8 @@ export default function Home() {
           learnerContext={learnerContext} setLearnerContext={setLearnerContext}
           loading={loading} onSubmit={handleSubmit}
         />
+
+        <GeneratingStatus isLoading={loading} />
 
         <HistoryPanel learnerId={learnerId} history={history} />
 
