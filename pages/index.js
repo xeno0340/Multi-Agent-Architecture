@@ -1,22 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import LearnerForm from "../components/LearnerForm";
+import ResultsDisplay from "../components/ResultsDisplay";
+import HistoryPanel from "../components/HistoryPanel";
+
+const HISTORY_KEY_PREFIX = "learner-history:";
+
+function loadHistory(learnerId) {
+  if (!learnerId) return [];
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY_PREFIX + learnerId.trim().toLowerCase());
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistoryEntry(learnerId, entry) {
+  if (!learnerId) return;
+  const key = HISTORY_KEY_PREFIX + learnerId.trim().toLowerCase();
+  const existing = loadHistory(learnerId);
+  const updated = [...existing, entry];
+  localStorage.setItem(key, JSON.stringify(updated));
+}
 
 export default function Home() {
+  const [learnerId, setLearnerId] = useState("");
+  const [board, setBoard] = useState("");
   const [topic, setTopic] = useState("");
   const [learnerContext, setLearnerContext] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [feedbackGiven, setFeedbackGiven] = useState(false);
+
+  useEffect(() => {
+    setHistory(loadHistory(learnerId));
+  }, [learnerId]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError("");
     setData(null);
+    setFeedbackGiven(false);
     try {
+      const priorHistory = loadHistory(learnerId);
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, learnerContext }),
+        body: JSON.stringify({ topic, learnerContext, board, priorHistory }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Request failed");
@@ -28,86 +61,46 @@ export default function Home() {
     }
   }
 
+  function handleFeedback(feedback) {
+    if (!learnerId || !data) return;
+    saveHistoryEntry(learnerId, {
+      topic,
+      difficulty: data.plan?.calibration?.difficulty || "unknown",
+      feedback,
+      timestamp: new Date().toISOString(),
+    });
+    setHistory(loadHistory(learnerId));
+    setFeedbackGiven(true);
+  }
+
   return (
     <div style={styles.page}>
       <div style={styles.container}>
         <h1 style={styles.h1}>Multi-Agent Personalized Learning — MVP</h1>
         <p style={styles.sub}>
-          Enter a topic and a learner's context. The orchestrator decides which
-          agents to invoke and how to calibrate them — live, per request.
+          Enter a learner, a topic, and their context. The orchestrator decides
+          which agents to invoke, aligns to the given curriculum board/class,
+          and adapts based on the learner's past feedback.
         </p>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>Topic</label>
-          <input
-            style={styles.input}
-            placeholder="e.g. Recursion, Photosynthesis, Fractions"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            required
-          />
+        <LearnerForm
+          learnerId={learnerId} setLearnerId={setLearnerId}
+          board={board} setBoard={setBoard}
+          topic={topic} setTopic={setTopic}
+          learnerContext={learnerContext} setLearnerContext={setLearnerContext}
+          loading={loading} onSubmit={handleSubmit}
+        />
 
-          <label style={styles.label}>Learner context</label>
-          <input
-            style={styles.input}
-            placeholder="e.g. 2nd-year CS student who knows loops but not recursion"
-            value={learnerContext}
-            onChange={(e) => setLearnerContext(e.target.value)}
-            required
-          />
-
-          <button style={styles.button} disabled={loading} type="submit">
-            {loading ? "Orchestrating agents..." : "Generate"}
-          </button>
-        </form>
+        <HistoryPanel learnerId={learnerId} history={history} />
 
         {error && <div style={styles.error}>{error}</div>}
 
-        {data && (
-          <div style={styles.results}>
-            <section style={styles.planBox}>
-              <h3 style={styles.h3}>Orchestrator Plan (live decision)</h3>
-              <pre style={styles.pre}>{JSON.stringify(data.plan, null, 2)}</pre>
-            </section>
-
-            {data.results.content && (
-              <section style={styles.card}>
-                <h3 style={styles.h3}>Content Agent Output</h3>
-                <p>{data.results.content.explanation}</p>
-                {data.results.content.key_examples?.length > 0 && (
-                  <>
-                    <strong>Examples:</strong>
-                    <ul>
-                      {data.results.content.key_examples.map((ex, i) => (
-                        <li key={i}>{ex}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </section>
-            )}
-
-            {data.results.assessment && (
-              <section style={styles.card}>
-                <h3 style={styles.h3}>Assessment Agent Output</h3>
-                {data.results.assessment.questions?.map((q, i) => (
-                  <div key={i} style={styles.question}>
-                    <p>
-                      <strong>Q{i + 1} ({q.difficulty}):</strong> {q.question}
-                    </p>
-                    <ul>
-                      {q.rubric?.map((r, j) => (
-                        <li key={j}>
-                          {r.criterion} — {r.weight_percent}%
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </section>
-            )}
-          </div>
-        )}
+        <ResultsDisplay
+          data={data}
+          learnerId={learnerId}
+          feedbackGiven={feedbackGiven}
+          onFeedback={handleFeedback}
+        />
       </div>
     </div>
   );
@@ -118,15 +111,5 @@ const styles = {
   container: { maxWidth: 720, margin: "0 auto" },
   h1: { fontSize: 26, marginBottom: 8 },
   sub: { color: "#a0a0a0", marginBottom: 24, lineHeight: 1.5 },
-  form: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 },
-  label: { fontSize: 13, color: "#b0b0b0", marginTop: 8 },
-  input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #333", background: "#1a1d24", color: "#fff", fontSize: 15 },
-  button: { marginTop: 16, padding: "12px 16px", borderRadius: 8, border: "none", background: "#7c5cff", color: "#fff", fontSize: 15, cursor: "pointer" },
   error: { background: "#3a1a1a", color: "#ff8080", padding: 12, borderRadius: 8, marginBottom: 16 },
-  results: { display: "flex", flexDirection: "column", gap: 16 },
-  planBox: { background: "#1a1d24", padding: 16, borderRadius: 10, border: "1px solid #2a2d34" },
-  card: { background: "#15171c", padding: 16, borderRadius: 10, border: "1px solid #2a2d34", lineHeight: 1.6 },
-  h3: { fontSize: 16, marginBottom: 8, color: "#c9c2ff" },
-  pre: { fontSize: 12, whiteSpace: "pre-wrap", color: "#8fd6a0" },
-  question: { marginBottom: 12, borderBottom: "1px solid #2a2d34", paddingBottom: 8 },
 };
