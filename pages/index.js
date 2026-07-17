@@ -2,13 +2,16 @@ import { useState, useEffect } from "react";
 import LearnerForm from "../components/LearnerForm";
 import ResultsDisplay from "../components/ResultsDisplay";
 import HistoryPanel from "../components/HistoryPanel";
+import ExampleGallery from "../components/ExampleGallery";
 
 const HISTORY_KEY_PREFIX = "learner-history:";
 
 function loadHistory(learnerId) {
   if (!learnerId) return [];
   try {
-    const raw = localStorage.getItem(HISTORY_KEY_PREFIX + learnerId.trim().toLowerCase());
+    const raw = localStorage.getItem(
+      HISTORY_KEY_PREFIX + learnerId.trim().toLowerCase()
+    );
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -38,6 +41,16 @@ export default function Home() {
     setHistory(loadHistory(learnerId));
   }, [learnerId]);
 
+  function handleExampleSelect({
+    topic,
+    learnerContext,
+    board,
+  }) {
+    setTopic(topic);
+    setLearnerContext(learnerContext);
+    setBoard(board);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
@@ -49,7 +62,12 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, learnerContext, board, priorHistory }),
+        body: JSON.stringify({
+          topic,
+          learnerContext,
+          board,
+          priorHistory,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Request failed");
@@ -77,18 +95,26 @@ export default function Home() {
     <div style={styles.page}>
       <div style={styles.container}>
         <h1 style={styles.h1}>Multi-Agent Personalized Learning — MVP</h1>
+
         <p style={styles.sub}>
           Enter a learner, a topic, and their context. The orchestrator decides
           which agents to invoke, aligns to the given curriculum board/class,
           and adapts based on the learner's past feedback.
         </p>
 
+        <ExampleGallery onSelectExample={handleExampleSelect} />
+
         <LearnerForm
-          learnerId={learnerId} setLearnerId={setLearnerId}
-          board={board} setBoard={setBoard}
-          topic={topic} setTopic={setTopic}
-          learnerContext={learnerContext} setLearnerContext={setLearnerContext}
-          loading={loading} onSubmit={handleSubmit}
+          learnerId={learnerId}
+          setLearnerId={setLearnerId}
+          board={board}
+          setBoard={setBoard}
+          topic={topic}
+          setTopic={setTopic}
+          learnerContext={learnerContext}
+          setLearnerContext={setLearnerContext}
+          loading={loading}
+          onSubmit={handleSubmit}
         />
 
         <HistoryPanel learnerId={learnerId} history={history} />
@@ -107,9 +133,31 @@ export default function Home() {
 }
 
 const styles = {
-  page: { minHeight: "100vh", background: "#0f1115", color: "#e6e6e6", fontFamily: "system-ui, sans-serif", padding: "40px 16px" },
-  container: { maxWidth: 720, margin: "0 auto" },
-  h1: { fontSize: 26, marginBottom: 8 },
-  sub: { color: "#a0a0a0", marginBottom: 24, lineHeight: 1.5 },
-  error: { background: "#3a1a1a", color: "#ff8080", padding: 12, borderRadius: 8, marginBottom: 16 },
+  page: {
+    minHeight: "100vh",
+    background: "#0f1115",
+    color: "#e6e6e6",
+    fontFamily: "system-ui, sans-serif",
+    padding: "40px 16px",
+  },
+  container: {
+    maxWidth: 720,
+    margin: "0 auto",
+  },
+  h1: {
+    fontSize: 26,
+    marginBottom: 8,
+  },
+  sub: {
+    color: "#a0a0a0",
+    marginBottom: 24,
+    lineHeight: 1.5,
+  },
+  error: {
+    background: "#3a1a1a",
+    color: "#ff8080",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
 };
