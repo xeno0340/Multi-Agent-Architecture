@@ -32,7 +32,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [data, setData] = useState(null);
   const [history, setHistory] = useState([]);
-  const [feedbackGiven, setFeedbackGiven] = useState(false);
 
   useEffect(() => {
     setHistory(loadHistory(learnerId));
@@ -43,7 +42,6 @@ export default function Home() {
     setLoading(true);
     setError("");
     setData(null);
-    setFeedbackGiven(false);
     try {
       const priorHistory = loadHistory(learnerId);
       const res = await fetch("/api/generate", {
@@ -61,16 +59,9 @@ export default function Home() {
     }
   }
 
-  function handleFeedback(feedback) {
-    if (!learnerId || !data) return;
-    saveHistoryEntry(learnerId, {
-      topic,
-      difficulty: data.plan?.calibration?.difficulty || "unknown",
-      feedback,
-      timestamp: new Date().toISOString(),
-    });
+  function handleGraded(entry) {
+    saveHistoryEntry(learnerId, entry);
     setHistory(loadHistory(learnerId));
-    setFeedbackGiven(true);
   }
 
   return (
@@ -80,7 +71,7 @@ export default function Home() {
         <p style={styles.sub}>
           Enter a learner, a topic, and their context. The orchestrator decides
           which agents to invoke, aligns to the given curriculum board/class,
-          and adapts based on the learner's past feedback.
+          and adapts based on the learner's real graded performance over time.
         </p>
 
         <LearnerForm
@@ -98,8 +89,8 @@ export default function Home() {
         <ResultsDisplay
           data={data}
           learnerId={learnerId}
-          feedbackGiven={feedbackGiven}
-          onFeedback={handleFeedback}
+          topic={topic}
+          onGraded={handleGraded}
         />
       </div>
     </div>

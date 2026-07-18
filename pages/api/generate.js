@@ -1,4 +1,5 @@
 import { runOrchestrator } from "../../lib/agents/orchestrator";
+import { runCurriculumAgent } from "../../lib/agents/curriculumAgent";
 import { runContentAgent } from "../../lib/agents/contentAgent";
 import { runAssessmentAgent } from "../../lib/agents/assessmentAgent";
 
@@ -19,15 +20,23 @@ export default async function handler(req, res) {
   try {
     const plan = await runOrchestrator(topic, learnerContext, board, priorHistory);
 
-    const results = {};
-    if (plan.agents_needed?.includes("content")) {
-      results.content = await runContentAgent(topic, plan.calibration, board);
-    }
-    if (plan.agents_needed?.includes("assessment")) {
-      results.assessment = await runAssessmentAgent(topic, plan.calibration, board);
+    let curriculum = null;
+    let focusTopic = topic; // default: teach the topic as-is
+
+    if (plan.agents_needed?.includes("curriculum")) {
+      curriculum = await runCurriculumAgent(topic, learnerContext, board, priorHistory);
+      focusTopic = curriculum.focus_subtopic || topic;
     }
 
-    return res.status(200).json({ plan, results });
+    const results = {};
+    if (plan.agents_needed?.includes("content")) {
+      results.content = await runContentAgent(focusTopic, plan.calibration, board);
+    }
+    if (plan.agents_needed?.includes("assessment")) {
+      results.assessment = await runAssessmentAgent(focusTopic, plan.calibration, board);
+    }
+
+    return res.status(200).json({ plan, curriculum, focusTopic, results });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message || "Something went wrong generating the response." });
