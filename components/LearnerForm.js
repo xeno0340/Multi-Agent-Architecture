@@ -1,3 +1,5 @@
+import { colors, fonts } from "../lib/theme";
+
 export default function LearnerForm({
   learnerId, setLearnerId,
   board, setBoard,
@@ -6,52 +8,135 @@ export default function LearnerForm({
   loading, onSubmit,
 }) {
   return (
-    <form onSubmit={onSubmit} style={styles.form}>
-      <label style={styles.label}>Learner name (used to remember their history on this device)</label>
-      <input
-        style={styles.input}
-        placeholder="e.g. Rahul"
-        value={learnerId}
-        onChange={(e) => setLearnerId(e.target.value)}
-        required
-      />
+    <form onSubmit={onSubmit} style={styles.card}>
+      <div style={styles.cardHeader}>
+        <span style={styles.cardEyebrow}>New Request</span>
+        <h2 style={styles.cardTitle}>Tell us who's learning</h2>
+      </div>
 
-      <label style={styles.label}>Board & Class (optional — for curriculum alignment)</label>
-      <input
-        style={styles.input}
-        placeholder="e.g. CBSE Class 10, ICSE Class 8, or leave blank"
-        value={board}
-        onChange={(e) => setBoard(e.target.value)}
-      />
+      <div style={styles.grid}>
+        <div style={styles.field}>
+          <label style={styles.label} htmlFor="learnerId">
+            Learner name
+            <span style={styles.hint}>remembers their history on this device</span>
+          </label>
+          <input
+            id="learnerId"
+            style={styles.input}
+            placeholder="e.g. Rahul"
+            value={learnerId}
+            onChange={(e) => setLearnerId(e.target.value)}
+            required
+          />
+        </div>
 
-      <label style={styles.label}>Topic</label>
-      <input
-        style={styles.input}
-        placeholder="e.g. Recursion, Photosynthesis, Fractions"
-        value={topic}
-        onChange={(e) => setTopic(e.target.value)}
-        required
-      />
+        <div style={styles.field}>
+          <label style={styles.label} htmlFor="board">
+            Board & Class
+            <span style={styles.hint}>optional — for curriculum alignment</span>
+          </label>
+          <input
+            id="board"
+            style={styles.input}
+            placeholder="e.g. CBSE Class 10"
+            value={board}
+            onChange={(e) => setBoard(e.target.value)}
+          />
+        </div>
+      </div>
 
-      <label style={styles.label}>Learner context</label>
-      <input
-        style={styles.input}
-        placeholder="e.g. 2nd-year CS student who knows loops but not recursion"
-        value={learnerContext}
-        onChange={(e) => setLearnerContext(e.target.value)}
-        required
-      />
+      <div style={styles.field}>
+        <label style={styles.label} htmlFor="topic">Topic</label>
+        <input
+          id="topic"
+          style={styles.input}
+          placeholder="e.g. Recursion, Photosynthesis, Fractions"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          required
+        />
+      </div>
 
-      <button style={styles.button} disabled={loading} type="submit">
-        {loading ? "Orchestrating agents..." : "Generate"}
+      <div style={styles.field}>
+        <label style={styles.label} htmlFor="learnerContext">Learner context</label>
+        <input
+          id="learnerContext"
+          style={styles.input}
+          placeholder="e.g. 2nd-year CS student who knows loops but not recursion"
+          value={learnerContext}
+          onChange={(e) => setLearnerContext(e.target.value)}
+          required
+        />
+      </div>
+
+      <button style={{ ...styles.button, opacity: loading ? 0.7 : 1 }} disabled={loading} type="submit">
+        {loading ? "Orchestrating agents…" : "Generate"}
       </button>
     </form>
   );
 }
 
 const styles = {
-  form: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 },
-  label: { fontSize: 13, color: "#b0b0b0", marginTop: 8 },
-  input: { padding: "10px 12px", borderRadius: 8, border: "1px solid #333", background: "#1a1d24", color: "#fff", fontSize: 15 },
-  button: { marginTop: 16, padding: "12px 16px", borderRadius: 8, border: "none", background: "#7c5cff", color: "#fff", fontSize: 15, cursor: "pointer" },
+  card: {
+    background: colors.bgCard,
+    border: `1px solid ${colors.border}`,
+    borderRadius: 16,
+    padding: 28,
+    marginBottom: 20,
+  },
+  cardHeader: { marginBottom: 20 },
+  cardEyebrow: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
+    color: colors.textMuted,
+  },
+  cardTitle: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    fontWeight: 700,
+    color: colors.textPrimary,
+    margin: "4px 0 0",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 16,
+  },
+  field: { display: "flex", flexDirection: "column", gap: 6, marginTop: 16 },
+  label: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: 500,
+    color: colors.textSecondary,
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  hint: { fontSize: 11, fontWeight: 400, color: colors.textMuted },
+  input: {
+    fontFamily: fonts.body,
+    padding: "12px 14px",
+    borderRadius: 10,
+    border: `1px solid ${colors.border}`,
+    background: colors.bg,
+    color: colors.textPrimary,
+    fontSize: 15,
+    outline: "none",
+    transition: "border-color 0.15s ease",
+  },
+  button: {
+    marginTop: 24,
+    width: "100%",
+    padding: "14px 16px",
+    borderRadius: 10,
+    border: "none",
+    background: colors.orchestrator,
+    color: "#12141c",
+    fontFamily: fonts.display,
+    fontWeight: 700,
+    fontSize: 15,
+    cursor: "pointer",
+  },
 };

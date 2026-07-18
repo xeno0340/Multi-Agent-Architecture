@@ -1,5 +1,75 @@
 import { useState, useEffect } from "react";
 import MermaidDiagram from "./MermaidDiagram";
+import { colors, fonts, agentColor, tint } from "../lib/theme";
+
+const AGENT_SEQUENCE = [
+  { key: "orchestrator", label: "Orchestrator" },
+  { key: "curriculum", label: "Curriculum" },
+  { key: "content", label: "Content" },
+  { key: "storytelling", label: "Storytelling" },
+  { key: "assessment", label: "Assessment" },
+];
+
+function AgentPipeline({ agentsUsed }) {
+  return (
+    <div style={pipelineStyles.row}>
+      {AGENT_SEQUENCE.map((agent, i) => {
+        const active = agentsUsed.includes(agent.key);
+        const color = agentColor(agent.key);
+        return (
+          <div key={agent.key} style={{ display: "flex", alignItems: "center" }}>
+            <div
+              style={{
+                ...pipelineStyles.node,
+                background: active ? color : "transparent",
+                border: `1.5px solid ${active ? color : colors.border}`,
+                color: active ? "#0d0e14" : colors.textMuted,
+              }}
+            >
+              {agent.label}
+            </div>
+            {i < AGENT_SEQUENCE.length - 1 && (
+              <div style={{ ...pipelineStyles.line, background: active ? color : colors.border }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SectionCard({ agentKey, title, icon, children }) {
+  const color = agentColor(agentKey);
+  return (
+    <section
+      style={{
+        ...cardBase,
+        background: tint(color, 0.06),
+        border: `1px solid ${tint(color, 0.25)}`,
+        borderLeft: `3px solid ${color}`,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span
+          style={{
+            fontSize: 13,
+            padding: "4px 10px",
+            borderRadius: 20,
+            background: tint(color, 0.18),
+            color,
+            fontFamily: fonts.mono,
+            fontWeight: 600,
+            letterSpacing: 0.5,
+          }}
+        >
+          {icon} {agentKey.toUpperCase()}
+        </span>
+      </div>
+      <h3 style={cardTitle}>{title}</h3>
+      {children}
+    </section>
+  );
+}
 
 export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
   const [selected, setSelected] = useState({});
@@ -15,6 +85,7 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
   if (!data) return null;
 
   const questions = data.results.assessment?.questions || [];
+  const agentsUsed = ["orchestrator", ...(data.plan.agents_needed || [])];
 
   function handleSelect(qIndex, optionIndex) {
     if (graded) return;
@@ -54,72 +125,81 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
   }
 
   return (
-    <div style={styles.results}>
-      <section style={styles.planBox}>
-        <h3 style={styles.h3}>Orchestrator Plan (live decision)</h3>
-        <pre style={styles.pre}>{JSON.stringify(data.plan, null, 2)}</pre>
-      </section>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ ...cardBase, padding: "16px 20px" }}>
+        <span style={{ ...cardEyebrow, color: colors.textMuted, marginBottom: 10, display: "block" }}>
+          Agent Pipeline for This Request
+        </span>
+        <AgentPipeline agentsUsed={agentsUsed} />
+      </div>
+
+      <SectionCard agentKey="orchestrator" title="Live Decision" icon="🧭">
+        <pre style={preStyle}>{JSON.stringify(data.plan, null, 2)}</pre>
+      </SectionCard>
 
       {data.curriculum && (
-        <section style={styles.card}>
-          <h3 style={styles.h3}>Curriculum Agent Output</h3>
-          <p style={{ marginBottom: 14 }}>
-            This topic was broad, so it was broken into a sequence:
+        <SectionCard agentKey="curriculum" title="Lesson Sequence" icon="🗺️">
+          <p style={{ marginBottom: 14, color: colors.textSecondary, fontSize: 14 }}>
+            This topic was broad, so it was broken down:
           </p>
-          <div style={styles.flowchart}>
+          <div style={flowStyles.row}>
             {data.curriculum.sequence?.map((s, i) => {
               const isFocus = s === data.curriculum.focus_subtopic;
+              const color = agentColor("curriculum");
               return (
                 <div key={i} style={{ display: "flex", alignItems: "center" }}>
                   <div
                     style={{
-                      ...styles.flowNode,
-                      background: isFocus ? "#7c5cff" : "#1a1d24",
-                      borderColor: isFocus ? "#7c5cff" : "#2a2d34",
-                      color: isFocus ? "#fff" : "#e6e6e6",
-                      fontWeight: isFocus ? "bold" : "normal",
+                      ...flowStyles.node,
+                      background: isFocus ? color : colors.bg,
+                      borderColor: isFocus ? color : colors.border,
+                      color: isFocus ? "#0d0e14" : colors.textPrimary,
+                      fontWeight: isFocus ? 700 : 400,
                     }}
                   >
                     {s}
-                    {isFocus && <div style={styles.flowBadge}>teaching now</div>}
+                    {isFocus && <div style={flowStyles.badge}>teaching now</div>}
                   </div>
                   {i < data.curriculum.sequence.length - 1 && (
-                    <div style={styles.flowArrow}>→</div>
+                    <div style={{ ...flowStyles.arrow, color: colors.textMuted }}>→</div>
                   )}
                 </div>
               );
             })}
           </div>
-          <p style={{ fontSize: 13, color: "#a0a0a0", marginTop: 14 }}>
+          <p style={{ fontSize: 13, color: colors.textMuted, marginTop: 14 }}>
             {data.curriculum.reasoning}
           </p>
-        </section>
+        </SectionCard>
       )}
 
       {data.results.content && (
-        <section style={styles.card}>
-          <h3 style={styles.h3}>Content Agent Output</h3>
-          <p>{data.results.content.explanation}</p>
+        <SectionCard agentKey="content" title="Explanation" icon="✍️">
+          <p style={{ lineHeight: 1.7, color: colors.textPrimary, fontSize: 15 }}>
+            {data.results.content.explanation}
+          </p>
           {data.results.content.key_examples?.length > 0 && (
-            <>
-              <strong>Examples:</strong>
-              <ul>
+            <div style={{ marginTop: 12 }}>
+              <strong style={{ color: colors.textSecondary, fontSize: 13 }}>Examples</strong>
+              <ul style={{ marginTop: 6 }}>
                 {data.results.content.key_examples.map((ex, i) => (
-                  <li key={i}>{ex}</li>
+                  <li key={i} style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 4 }}>{ex}</li>
                 ))}
               </ul>
-            </>
+            </div>
           )}
           {data.results.content.diagram_mermaid && (
-            <MermaidDiagram chart={data.results.content.diagram_mermaid} />
+            <div style={{ marginTop: 16, borderRadius: 10, overflow: "hidden", border: `1px solid ${colors.border}` }}>
+              <MermaidDiagram chart={data.results.content.diagram_mermaid} />
+            </div>
           )}
           {data.results.content.table_rows?.length > 0 && (
-            <div style={{ overflowX: "auto", marginTop: 14 }}>
-              <table style={styles.table}>
+            <div style={{ overflowX: "auto", marginTop: 16 }}>
+              <table style={tableStyles.table}>
                 <thead>
                   <tr>
                     {data.results.content.table_headers.map((h, i) => (
-                      <th key={i} style={styles.th}>{h}</th>
+                      <th key={i} style={tableStyles.th}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -127,7 +207,7 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
                   {data.results.content.table_rows.map((row, ri) => (
                     <tr key={ri}>
                       {row.map((cell, ci) => (
-                        <td key={ci} style={styles.td}>{cell}</td>
+                        <td key={ci} style={tableStyles.td}>{cell}</td>
                       ))}
                     </tr>
                   ))}
@@ -135,39 +215,47 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
               </table>
             </div>
           )}
-        </section>
+        </SectionCard>
       )}
 
       {data.results.storytelling?.story && (
-        <section style={styles.storyCard}>
-          <h3 style={styles.h3}>📖 Story Version</h3>
-          <p style={{ fontStyle: "italic", lineHeight: 1.7 }}>
+        <SectionCard agentKey="storytelling" title="Story Version" icon="📖">
+          <p style={{ fontStyle: "italic", lineHeight: 1.7, color: colors.textPrimary, fontSize: 15 }}>
             {data.results.storytelling.story}
           </p>
-        </section>
+        </SectionCard>
       )}
 
       {questions.length > 0 && (
-        <section style={styles.card}>
-          <h3 style={styles.h3}>Assessment — Pick an Answer</h3>
+        <SectionCard agentKey="assessment" title="Pick an Answer" icon="📝">
           {questions.map((q, qi) => (
-            <div key={qi} style={styles.question}>
-              <p>
+            <div key={qi} style={{ marginBottom: 18, borderBottom: `1px solid ${colors.border}`, paddingBottom: 14 }}>
+              <p style={{ color: colors.textPrimary, fontSize: 14, marginBottom: 8 }}>
                 <strong>Q{qi + 1} ({q.difficulty}):</strong> {q.question}
               </p>
               {q.options.map((opt, oi) => {
                 const isSelected = selected[qi] === oi;
                 const isCorrect = q.correct_index === oi;
-                let bg = "#1a1d24";
-                if (graded && isCorrect) bg = "#1f3d24";
-                else if (graded && isSelected && !isCorrect) bg = "#3d1f1f";
-                else if (isSelected) bg = "#2a2440";
+                let bg = colors.bg;
+                let border = colors.border;
+                if (graded && isCorrect) { bg = "#16302a"; border = colors.assessment; }
+                else if (graded && isSelected && !isCorrect) { bg = "#331c1c"; border = colors.error; }
+                else if (isSelected) { bg = colors.bgCardAlt; border = colors.assessment; }
 
                 return (
                   <div
                     key={oi}
                     onClick={() => handleSelect(qi, oi)}
-                    style={{ ...styles.option, background: bg }}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      marginTop: 8,
+                      cursor: graded ? "default" : "pointer",
+                      border: `1px solid ${border}`,
+                      background: bg,
+                      color: colors.textPrimary,
+                      fontSize: 14,
+                    }}
                   >
                     {opt}
                     {graded && isCorrect ? " ✅" : ""}
@@ -176,7 +264,7 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
                 );
               })}
               {graded && (
-                <p style={{ fontSize: 13, color: "#a0a0a0", marginTop: 6 }}>
+                <p style={{ fontSize: 13, color: colors.textMuted, marginTop: 8 }}>
                   {q.explanation}
                 </p>
               )}
@@ -184,68 +272,89 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
           ))}
 
           {!graded ? (
-            <button style={styles.button} onClick={handleSubmit}>
+            <button onClick={handleSubmit} style={buttonStyle}>
               Submit for Grading
             </button>
           ) : (
-            <div style={styles.overallBox}>
-              <h4 style={{ color: "#c9c2ff", marginBottom: 6 }}>
-                Overall: {result.overallScore}/100 ({result.correctCount}/{result.total}{" "}
-                correct) — Demonstrated level: {result.demonstratedLevel}
+            <div style={{ marginTop: 16, padding: 16, background: colors.bg, borderRadius: 10, border: `1px solid ${colors.assessment}` }}>
+              <h4 style={{ color: colors.assessment, marginBottom: 6, fontFamily: fonts.display }}>
+                {result.overallScore}/100 ({result.correctCount}/{result.total} correct) — {result.demonstratedLevel}
               </h4>
-              <p style={{ fontSize: 14 }}>{result.summary}</p>
-              <p style={{ color: "#8fd6a0", fontSize: 13, marginTop: 8 }}>
-                Saved to {learnerId}'s history — next session will adapt based on this
-                real result, even if you describe yourself differently next time.
+              <p style={{ fontSize: 14, color: colors.textSecondary }}>{result.summary}</p>
+              <p style={{ color: colors.textMuted, fontSize: 12, marginTop: 8 }}>
+                Saved to {learnerId}'s history — next session adapts based on this real result.
               </p>
             </div>
           )}
-        </section>
+        </SectionCard>
       )}
     </div>
   );
 }
 
-const styles = {
-  results: { display: "flex", flexDirection: "column", gap: 16 },
-  planBox: { background: "#1a1d24", padding: 16, borderRadius: 10, border: "1px solid #2a2d34" },
-  card: { background: "#15171c", padding: 16, borderRadius: 10, border: "1px solid #2a2d34", lineHeight: 1.6 },
-  storyCard: {
-    background: "#1f1a2e",
-    padding: 16,
-    borderRadius: 10,
-    border: "1px solid #3d2f5c",
-    lineHeight: 1.6,
+const cardBase = {
+  background: colors.bgCard,
+  border: `1px solid ${colors.border}`,
+  borderRadius: 14,
+  padding: 20,
+};
+const cardEyebrow = {
+  fontFamily: fonts.mono,
+  fontSize: 11,
+  letterSpacing: 1.2,
+  fontWeight: 500,
+};
+const cardTitle = {
+  fontFamily: fonts.display,
+  fontSize: 17,
+  fontWeight: 700,
+  color: colors.textPrimary,
+  margin: "2px 0 12px",
+};
+const preStyle = {
+  fontFamily: fonts.mono,
+  fontSize: 12,
+  whiteSpace: "pre-wrap",
+  color: colors.textSecondary,
+  background: colors.bg,
+  padding: 12,
+  borderRadius: 8,
+  border: `1px solid ${colors.border}`,
+};
+const buttonStyle = {
+  marginTop: 8,
+  padding: "12px 18px",
+  borderRadius: 8,
+  border: "none",
+  background: colors.assessment,
+  color: "#0d0e14",
+  fontFamily: fonts.display,
+  fontWeight: 700,
+  fontSize: 14,
+  cursor: "pointer",
+};
+
+const pipelineStyles = {
+  row: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 0 },
+  node: {
+    padding: "6px 12px",
+    borderRadius: 20,
+    fontSize: 12,
+    fontFamily: fonts.mono,
+    fontWeight: 600,
   },
-  h3: { fontSize: 16, marginBottom: 8, color: "#c9c2ff" },
-  pre: { fontSize: 12, whiteSpace: "pre-wrap", color: "#8fd6a0" },
-  question: { marginBottom: 16, borderBottom: "1px solid #2a2d34", paddingBottom: 12 },
-  option: {
-    padding: "10px 12px",
-    borderRadius: 8,
-    marginTop: 8,
-    cursor: "pointer",
-    border: "1px solid #2a2d34",
-  },
-  overallBox: { marginTop: 16, padding: 14, background: "#1a1d24", borderRadius: 10, border: "1px solid #2a2d34" },
-  button: { marginTop: 12, padding: "12px 16px", borderRadius: 8, border: "none", background: "#7c5cff", color: "#fff", fontSize: 15, cursor: "pointer" },
-  flowchart: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4 },
-  flowNode: {
-    padding: "10px 14px",
-    borderRadius: 10,
-    border: "1px solid",
-    fontSize: 13,
-    position: "relative",
-    whiteSpace: "nowrap",
-  },
-  flowArrow: { fontSize: 18, color: "#666", padding: "0 4px" },
-  flowBadge: {
-    fontSize: 10,
-    color: "#c9c2ff",
-    marginTop: 4,
-    fontWeight: "normal",
-  },
+  line: { width: 20, height: 2 },
+};
+
+const flowStyles = {
+  row: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4 },
+  node: { padding: "10px 14px", borderRadius: 10, border: "1px solid", fontSize: 13, position: "relative", whiteSpace: "nowrap" },
+  arrow: { fontSize: 18, padding: "0 4px" },
+  badge: { fontSize: 10, marginTop: 4, fontWeight: 400 },
+};
+
+const tableStyles = {
   table: { width: "100%", borderCollapse: "collapse", fontSize: 13 },
-  th: { textAlign: "left", padding: "8px 10px", background: "#1a1d24", color: "#c9c2ff", borderBottom: "2px solid #2a2d34" },
-  td: { padding: "8px 10px", borderBottom: "1px solid #2a2d34" },
+  th: { textAlign: "left", padding: "8px 10px", background: colors.bg, color: colors.content, borderBottom: `2px solid ${colors.border}` },
+  td: { padding: "8px 10px", borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary },
 };
