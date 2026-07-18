@@ -2,6 +2,7 @@ import { runOrchestrator } from "../../lib/agents/orchestrator";
 import { runCurriculumAgent } from "../../lib/agents/curriculumAgent";
 import { runContentAgent } from "../../lib/agents/contentAgent";
 import { runAssessmentAgent } from "../../lib/agents/assessmentAgent";
+import { runStorytellingAgent } from "../../lib/agents/storytellingAgent";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     const plan = await runOrchestrator(topic, learnerContext, board, priorHistory);
 
     let curriculum = null;
-    let focusTopic = topic; // default: teach the topic as-is
+    let focusTopic = topic;
 
     if (plan.agents_needed?.includes("curriculum")) {
       curriculum = await runCurriculumAgent(topic, learnerContext, board, priorHistory);
@@ -34,6 +35,13 @@ export default async function handler(req, res) {
     }
     if (plan.agents_needed?.includes("assessment")) {
       results.assessment = await runAssessmentAgent(focusTopic, plan.calibration, board);
+    }
+    if (plan.agents_needed?.includes("storytelling") && results.content?.explanation) {
+      results.storytelling = await runStorytellingAgent(
+        focusTopic,
+        results.content.explanation,
+        plan.calibration
+      );
     }
 
     return res.status(200).json({ plan, curriculum, focusTopic, results });

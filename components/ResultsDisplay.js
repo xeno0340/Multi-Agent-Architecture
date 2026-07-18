@@ -138,6 +138,15 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
         </section>
       )}
 
+      {data.results.storytelling?.story && (
+        <section style={styles.storyCard}>
+          <h3 style={styles.h3}>📖 Story Version</h3>
+          <p style={{ fontStyle: "italic", lineHeight: 1.7 }}>
+            {data.results.storytelling.story}
+          </p>
+        </section>
+      )}
+
       {questions.length > 0 && (
         <section style={styles.card}>
           <h3 style={styles.h3}>Assessment — Pick an Answer</h3>
@@ -201,6 +210,13 @@ const styles = {
   results: { display: "flex", flexDirection: "column", gap: 16 },
   planBox: { background: "#1a1d24", padding: 16, borderRadius: 10, border: "1px solid #2a2d34" },
   card: { background: "#15171c", padding: 16, borderRadius: 10, border: "1px solid #2a2d34", lineHeight: 1.6 },
+  storyCard: {
+    background: "#1f1a2e",
+    padding: 16,
+    borderRadius: 10,
+    border: "1px solid #3d2f5c",
+    lineHeight: 1.6,
+  },
   h3: { fontSize: 16, marginBottom: 8, color: "#c9c2ff" },
   pre: { fontSize: 12, whiteSpace: "pre-wrap", color: "#8fd6a0" },
   question: { marginBottom: 16, borderBottom: "1px solid #2a2d34", paddingBottom: 12 },
