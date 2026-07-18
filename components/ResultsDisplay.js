@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import MermaidDiagram from "./MermaidDiagram";
 
 export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
   const [selected, setSelected] = useState({});
@@ -62,23 +63,34 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
       {data.curriculum && (
         <section style={styles.card}>
           <h3 style={styles.h3}>Curriculum Agent Output</h3>
-          <p style={{ marginBottom: 10 }}>
+          <p style={{ marginBottom: 14 }}>
             This topic was broad, so it was broken into a sequence:
           </p>
-          <ol>
-            {data.curriculum.sequence?.map((s, i) => (
-              <li
-                key={i}
-                style={{
-                  fontWeight: s === data.curriculum.focus_subtopic ? "bold" : "normal",
-                  color: s === data.curriculum.focus_subtopic ? "#c9c2ff" : "#e6e6e6",
-                }}
-              >
-                {s} {s === data.curriculum.focus_subtopic ? "← teaching this now" : ""}
-              </li>
-            ))}
-          </ol>
-          <p style={{ fontSize: 13, color: "#a0a0a0", marginTop: 8 }}>
+          <div style={styles.flowchart}>
+            {data.curriculum.sequence?.map((s, i) => {
+              const isFocus = s === data.curriculum.focus_subtopic;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                  <div
+                    style={{
+                      ...styles.flowNode,
+                      background: isFocus ? "#7c5cff" : "#1a1d24",
+                      borderColor: isFocus ? "#7c5cff" : "#2a2d34",
+                      color: isFocus ? "#fff" : "#e6e6e6",
+                      fontWeight: isFocus ? "bold" : "normal",
+                    }}
+                  >
+                    {s}
+                    {isFocus && <div style={styles.flowBadge}>teaching now</div>}
+                  </div>
+                  {i < data.curriculum.sequence.length - 1 && (
+                    <div style={styles.flowArrow}>→</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: 13, color: "#a0a0a0", marginTop: 14 }}>
             {data.curriculum.reasoning}
           </p>
         </section>
@@ -97,6 +109,9 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
                 ))}
               </ul>
             </>
+          )}
+          {data.results.content.diagram_mermaid && (
+            <MermaidDiagram chart={data.results.content.diagram_mermaid} />
           )}
         </section>
       )}
@@ -176,4 +191,20 @@ const styles = {
   },
   overallBox: { marginTop: 16, padding: 14, background: "#1a1d24", borderRadius: 10, border: "1px solid #2a2d34" },
   button: { marginTop: 12, padding: "12px 16px", borderRadius: 8, border: "none", background: "#7c5cff", color: "#fff", fontSize: 15, cursor: "pointer" },
+  flowchart: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4 },
+  flowNode: {
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "1px solid",
+    fontSize: 13,
+    position: "relative",
+    whiteSpace: "nowrap",
+  },
+  flowArrow: { fontSize: 18, color: "#666", padding: "0 4px" },
+  flowBadge: {
+    fontSize: 10,
+    color: "#c9c2ff",
+    marginTop: 4,
+    fontWeight: "normal",
+  },
 };
