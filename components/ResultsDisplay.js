@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import MermaidDiagram from "./MermaidDiagram";
 import { colors, fonts, agentColor, tint } from "../lib/theme";
+import { useIsMobile } from "../lib/useIsMobile";
 
 const AGENT_SEQUENCE = [
   { key: "orchestrator", label: "Orchestrator" },
@@ -38,12 +39,13 @@ function AgentPipeline({ agentsUsed }) {
   );
 }
 
-function SectionCard({ agentKey, title, icon, children }) {
+function SectionCard({ agentKey, title, icon, children, isMobile }) {
   const color = agentColor(agentKey);
   return (
     <section
       style={{
         ...cardBase,
+        padding: isMobile ? 14 : 20,
         background: tint(color, 0.06),
         border: `1px solid ${tint(color, 0.25)}`,
         borderLeft: `3px solid ${color}`,
@@ -52,7 +54,7 @@ function SectionCard({ agentKey, title, icon, children }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <span
           style={{
-            fontSize: 13,
+            fontSize: 12,
             padding: "4px 10px",
             borderRadius: 20,
             background: tint(color, 0.18),
@@ -65,13 +67,14 @@ function SectionCard({ agentKey, title, icon, children }) {
           {icon} {agentKey.toUpperCase()}
         </span>
       </div>
-      <h3 style={cardTitle}>{title}</h3>
+      <h3 style={{ ...cardTitle, fontSize: isMobile ? 15 : 17 }}>{title}</h3>
       {children}
     </section>
   );
 }
 
 export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
+  const isMobile = useIsMobile();
   const [selected, setSelected] = useState({});
   const [graded, setGraded] = useState(false);
   const [result, setResult] = useState(null);
@@ -125,20 +128,20 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ ...cardBase, padding: "16px 20px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 14 : 20 }}>
+      <div style={{ ...cardBase, padding: isMobile ? "12px 14px" : "16px 20px" }}>
         <span style={{ ...cardEyebrow, color: colors.textMuted, marginBottom: 10, display: "block" }}>
           Agent Pipeline for This Request
         </span>
         <AgentPipeline agentsUsed={agentsUsed} />
       </div>
 
-      <SectionCard agentKey="orchestrator" title="Live Decision" icon="🧭">
+      <SectionCard agentKey="orchestrator" title="Live Decision" icon="🧭" isMobile={isMobile}>
         <pre style={preStyle}>{JSON.stringify(data.plan, null, 2)}</pre>
       </SectionCard>
 
       {data.curriculum && (
-        <SectionCard agentKey="curriculum" title="Lesson Sequence" icon="🗺️">
+        <SectionCard agentKey="curriculum" title="Lesson Sequence" icon="🗺️" isMobile={isMobile}>
           <p style={{ marginBottom: 14, color: colors.textSecondary, fontSize: 14 }}>
             This topic was broad, so it was broken down:
           </p>
@@ -174,14 +177,14 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
       )}
 
       {data.results.content && (
-        <SectionCard agentKey="content" title="Explanation" icon="✍️">
-          <p style={{ lineHeight: 1.7, color: colors.textPrimary, fontSize: 15 }}>
+        <SectionCard agentKey="content" title="Explanation" icon="✍️" isMobile={isMobile}>
+          <p style={{ lineHeight: 1.7, color: colors.textPrimary, fontSize: isMobile ? 14 : 15 }}>
             {data.results.content.explanation}
           </p>
           {data.results.content.key_examples?.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <strong style={{ color: colors.textSecondary, fontSize: 13 }}>Examples</strong>
-              <ul style={{ marginTop: 6 }}>
+              <ul style={{ marginTop: 6, paddingLeft: 20 }}>
                 {data.results.content.key_examples.map((ex, i) => (
                   <li key={i} style={{ fontSize: 14, color: colors.textSecondary, marginBottom: 4 }}>{ex}</li>
                 ))}
@@ -194,7 +197,7 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
             </div>
           )}
           {data.results.content.table_rows?.length > 0 && (
-            <div style={{ overflowX: "auto", marginTop: 16 }}>
+            <div style={{ overflowX: "auto", marginTop: 16, WebkitOverflowScrolling: "touch" }}>
               <table style={tableStyles.table}>
                 <thead>
                   <tr>
@@ -219,15 +222,15 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
       )}
 
       {data.results.storytelling?.story && (
-        <SectionCard agentKey="storytelling" title="Story Version" icon="📖">
-          <p style={{ fontStyle: "italic", lineHeight: 1.7, color: colors.textPrimary, fontSize: 15 }}>
+        <SectionCard agentKey="storytelling" title="Story Version" icon="📖" isMobile={isMobile}>
+          <p style={{ fontStyle: "italic", lineHeight: 1.7, color: colors.textPrimary, fontSize: isMobile ? 14 : 15 }}>
             {data.results.storytelling.story}
           </p>
         </SectionCard>
       )}
 
       {questions.length > 0 && (
-        <SectionCard agentKey="assessment" title="Pick an Answer" icon="📝">
+        <SectionCard agentKey="assessment" title="Pick an Answer" icon="📝" isMobile={isMobile}>
           {questions.map((q, qi) => (
             <div key={qi} style={{ marginBottom: 18, borderBottom: `1px solid ${colors.border}`, paddingBottom: 14 }}>
               <p style={{ color: colors.textPrimary, fontSize: 14, marginBottom: 8 }}>
@@ -306,20 +309,21 @@ const cardEyebrow = {
 };
 const cardTitle = {
   fontFamily: fonts.display,
-  fontSize: 17,
   fontWeight: 700,
   color: colors.textPrimary,
   margin: "2px 0 12px",
 };
 const preStyle = {
   fontFamily: fonts.mono,
-  fontSize: 12,
+  fontSize: 11,
   whiteSpace: "pre-wrap",
+  wordBreak: "break-word",
   color: colors.textSecondary,
   background: colors.bg,
   padding: 12,
   borderRadius: 8,
   border: `1px solid ${colors.border}`,
+  overflowX: "auto",
 };
 const buttonStyle = {
   marginTop: 8,
@@ -332,6 +336,7 @@ const buttonStyle = {
   fontWeight: 700,
   fontSize: 14,
   cursor: "pointer",
+  width: "100%",
 };
 
 const pipelineStyles = {
@@ -354,7 +359,7 @@ const flowStyles = {
 };
 
 const tableStyles = {
-  table: { width: "100%", borderCollapse: "collapse", fontSize: 13 },
-  th: { textAlign: "left", padding: "8px 10px", background: colors.bg, color: colors.content, borderBottom: `2px solid ${colors.border}` },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 400 },
+  th: { textAlign: "left", padding: "8px 10px", background: colors.bg, color: colors.content, borderBottom: `2px solid ${colors.border}`, whiteSpace: "nowrap" },
   td: { padding: "8px 10px", borderBottom: `1px solid ${colors.border}`, color: colors.textSecondary },
 };

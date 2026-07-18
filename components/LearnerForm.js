@@ -1,4 +1,5 @@
 import { colors, fonts } from "../lib/theme";
+import { useIsMobile } from "../lib/useIsMobile";
 
 export default function LearnerForm({
   learnerId, setLearnerId,
@@ -7,14 +8,16 @@ export default function LearnerForm({
   learnerContext, setLearnerContext,
   loading, onSubmit,
 }) {
+  const isMobile = useIsMobile();
+
   return (
-    <form onSubmit={onSubmit} style={styles.card}>
+    <form onSubmit={onSubmit} style={{ ...styles.card, padding: isMobile ? 18 : 28 }}>
       <div style={styles.cardHeader}>
         <span style={styles.cardEyebrow}>New Request</span>
-        <h2 style={styles.cardTitle}>Tell us who's learning</h2>
+        <h2 style={{ ...styles.cardTitle, fontSize: isMobile ? 18 : 22 }}>Tell us who's learning</h2>
       </div>
 
-      <div style={styles.grid}>
+      <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
         <div style={styles.field}>
           <label style={styles.label} htmlFor="learnerId">
             Learner name
@@ -81,7 +84,6 @@ const styles = {
     background: colors.bgCard,
     border: `1px solid ${colors.border}`,
     borderRadius: 16,
-    padding: 28,
     marginBottom: 20,
   },
   cardHeader: { marginBottom: 20 },
@@ -94,14 +96,12 @@ const styles = {
   },
   cardTitle: {
     fontFamily: fonts.display,
-    fontSize: 22,
     fontWeight: 700,
     color: colors.textPrimary,
     margin: "4px 0 0",
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
     gap: 16,
   },
   field: { display: "flex", flexDirection: "column", gap: 6, marginTop: 16 },
@@ -122,9 +122,10 @@ const styles = {
     border: `1px solid ${colors.border}`,
     background: colors.bg,
     color: colors.textPrimary,
-    fontSize: 15,
+    fontSize: 16, // 16px prevents iOS Safari auto-zoom on focus
     outline: "none",
-    transition: "border-color 0.15s ease",
+    width: "100%",
+    boxSizing: "border-box",
   },
   button: {
     marginTop: 24,

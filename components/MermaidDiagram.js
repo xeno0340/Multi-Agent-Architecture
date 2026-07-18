@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 let mermaidInstance = null;
 
@@ -31,12 +31,19 @@ export default function MermaidDiagram({ chart }) {
     };
   }, [chart]);
 
-  if (error || !chart) return null; // fail silently — never break the rest of the page
+  if (error || !chart) return null;
   if (!svg) return <p style={{ fontSize: 13, color: "#888" }}>Rendering diagram...</p>;
 
   return (
     <div
-      style={{ background: "#fff", borderRadius: 8, padding: 12, marginTop: 12, overflowX: "auto" }}
+      style={{
+        background: "#fff",
+        borderRadius: 8,
+        padding: 12,
+        marginTop: 12,
+        overflowX: "auto",
+        maxWidth: "100%",
+      }}
       dangerouslySetInnerHTML={{ __html: svg }}
     />
   );

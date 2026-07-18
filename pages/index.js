@@ -3,6 +3,7 @@ import LearnerForm from "../components/LearnerForm";
 import ResultsDisplay from "../components/ResultsDisplay";
 import HistoryPanel from "../components/HistoryPanel";
 import { colors, fonts, tint } from "../lib/theme";
+import { useIsMobile } from "../lib/useIsMobile";
 
 const HISTORY_KEY_PREFIX = "learner-history:";
 const MAX_HISTORY_ENTRIES = 20;
@@ -34,6 +35,7 @@ function saveHistoryEntry(learnerId, entry) {
 }
 
 export default function Home() {
+  const isMobile = useIsMobile();
   const [learnerId, setLearnerId] = useState("");
   const [board, setBoard] = useState("");
   const [topic, setTopic] = useState("");
@@ -78,20 +80,22 @@ export default function Home() {
 
   return (
     <div style={styles.page}>
-      <div style={styles.shell}>
-        <aside style={styles.sidebar}>
+      <div style={{ ...styles.shell, gridTemplateColumns: isMobile ? "1fr" : "260px 1fr", padding: isMobile ? "24px 14px 60px" : "40px 24px 100px" }}>
+        <aside style={{ ...styles.sidebar, position: isMobile ? "static" : "sticky" }}>
           <div style={styles.logoRow}>
             <div style={styles.logoMark}>MA</div>
             <span style={styles.logoText}>MULTI-AGENT LEARNING</span>
           </div>
 
-          <p style={styles.sidebarBlurb}>
-            One request, coordinated across a team of specialist AI agents —
-            decided dynamically per request, not a fixed pipeline.
-          </p>
+          {!isMobile && (
+            <p style={styles.sidebarBlurb}>
+              One request, coordinated across a team of specialist AI agents —
+              decided dynamically per request, not a fixed pipeline.
+            </p>
+          )}
 
           <div style={styles.rosterLabel}>AGENT ROSTER</div>
-          <div style={styles.rosterList}>
+          <div style={{ ...styles.rosterList, flexDirection: isMobile ? "row" : "column", flexWrap: "wrap" }}>
             {AGENT_ROSTER.map((a) => {
               const active = activeAgents.includes(a.key);
               const c = colors[a.key];
@@ -102,6 +106,7 @@ export default function Home() {
                     ...styles.rosterItem,
                     background: active ? tint(c, 0.12) : "transparent",
                     border: `1px solid ${active ? tint(c, 0.4) : "transparent"}`,
+                    width: isMobile ? "auto" : "100%",
                   }}
                 >
                   <span style={{ ...styles.rosterDot, background: c, opacity: active ? 1 : 0.35 }} />
@@ -109,7 +114,7 @@ export default function Home() {
                     <div style={{ ...styles.rosterName, color: active ? c : colors.textSecondary }}>
                       {a.label}
                     </div>
-                    <div style={styles.rosterRole}>{a.role}</div>
+                    {!isMobile && <div style={styles.rosterRole}>{a.role}</div>}
                   </div>
                 </div>
               );
@@ -119,7 +124,9 @@ export default function Home() {
 
         <main style={styles.main}>
           <header style={styles.header}>
-            <h1 style={styles.h1}>A team of AI specialists, coordinated for every learner</h1>
+            <h1 style={{ ...styles.h1, fontSize: isMobile ? 24 : 30 }}>
+              A team of AI specialists, coordinated for every learner
+            </h1>
             <p style={styles.sub}>
               The orchestrator decides which agents to invoke, aligns to your curriculum
               board, and adapts to real graded performance over time — not self-reported
@@ -162,17 +169,14 @@ const styles = {
     maxWidth: 1180,
     margin: "0 auto",
     display: "grid",
-    gridTemplateColumns: "260px 1fr",
-    gap: 32,
-    padding: "40px 24px 100px",
+    gap: 24,
     alignItems: "start",
   },
   sidebar: {
-    position: "sticky",
     top: 40,
     display: "flex",
     flexDirection: "column",
-    gap: 20,
+    gap: 16,
   },
   logoRow: { display: "flex", alignItems: "center", gap: 10 },
   logoMark: {
@@ -208,7 +212,7 @@ const styles = {
     color: colors.textMuted,
     marginTop: 4,
   },
-  rosterList: { display: "flex", flexDirection: "column", gap: 6 },
+  rosterList: { display: "flex", gap: 6 },
   rosterItem: {
     display: "flex",
     alignItems: "flex-start",
@@ -227,16 +231,15 @@ const styles = {
   rosterName: { fontFamily: fonts.display, fontSize: 13, fontWeight: 700 },
   rosterRole: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
   main: { minWidth: 0 },
-  header: { marginBottom: 28 },
+  header: { marginBottom: 24 },
   h1: {
     fontFamily: fonts.display,
-    fontSize: 30,
     fontWeight: 700,
     lineHeight: 1.25,
     margin: "0 0 10px",
   },
   sub: {
-    fontSize: 15,
+    fontSize: 14,
     lineHeight: 1.6,
     color: colors.textSecondary,
     maxWidth: 560,
