@@ -113,6 +113,28 @@ export default function ResultsDisplay({ data, learnerId, topic, onGraded }) {
           {data.results.content.diagram_mermaid && (
             <MermaidDiagram chart={data.results.content.diagram_mermaid} />
           )}
+          {data.results.content.table_rows?.length > 0 && (
+            <div style={{ overflowX: "auto", marginTop: 14 }}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    {data.results.content.table_headers.map((h, i) => (
+                      <th key={i} style={styles.th}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.results.content.table_rows.map((row, ri) => (
+                    <tr key={ri}>
+                      {row.map((cell, ci) => (
+                        <td key={ci} style={styles.td}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
       )}
 
@@ -207,4 +229,7 @@ const styles = {
     marginTop: 4,
     fontWeight: "normal",
   },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 13 },
+  th: { textAlign: "left", padding: "8px 10px", background: "#1a1d24", color: "#c9c2ff", borderBottom: "2px solid #2a2d34" },
+  td: { padding: "8px 10px", borderBottom: "1px solid #2a2d34" },
 };
